@@ -89,14 +89,17 @@ class Application(tk.Frame):
         get_lto = True
         while get_lto:
             lto_fname = tkFileDialog.askopenfilename(title='Open LTO file')
-            if lto_fname:
-                print('File loaded.\n')
-            if '.json' in lto_fname:
-                jdata = get_json(lto_fname)
-                current = json_to_list(jdata)
-                self.name_size = json_final(current)
-                get_lto = False
-            return self.name_size
+            get_lto = False
+        assert lto_fname
+
+#           if lto_fname:
+#                print('File loaded.\n')
+#            if '.json' in lto_fname:
+#                jdata = get_json(lto_fname)
+#                current = json_to_list(jdata)
+#                self.name_size = json_final(current)
+#                get_lto = False
+#            return self.name_size
 
     def catdv_login(self):
         self.usr = self.username.get()
