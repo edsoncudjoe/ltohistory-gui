@@ -1,8 +1,10 @@
+import re
 import sys
 import json
 import Tkinter as tk
 import ttk
 import tkFileDialog
+import tkMessageBox
 
 sys.path.insert(0, '../ltohistory')
 sys.path.insert(0, '../py-catdv')
@@ -27,7 +29,7 @@ class Application(tk.Frame):
         self.locate_frame.grid(row=0, column=0)
 
         self.lto_btn = ttk.Button(self.locate_frame, text="Open LTO file",
-                                  command=self.print_logins)
+                                  command=self.open_lto)
 
         self.lto_file_label = tk.Label(self.locate_frame, width=50,
                                        textvariable=self.fstatus)
@@ -42,7 +44,6 @@ class Application(tk.Frame):
         self.results.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
 
     def login_window(self):
-        # user needs to log in to CatDV
         self.login_win = tk.Toplevel(self, bg='green', width=90, height=50, \
                                                                     padx=10,
                                      pady=10)
@@ -71,10 +72,9 @@ class Application(tk.Frame):
         self.username = tk.StringVar()
         self.password = tk.StringVar()
         self.fstatus = tk.StringVar()
-        # user then needs to locate lto history file
-        # users users button to get results
 
-        # users sees results in list
+
+
 
     def print_from_return(self, event):
         print self.username.get()
@@ -84,35 +84,99 @@ class Application(tk.Frame):
         print self.username.get()
         print self.password.get()
 
-    def open_lto(self):
-        name_size = None
-        get_lto = True
-        while get_lto:
-            lto_fname = tkFileDialog.askopenfilename(title='Open LTO file')
-            get_lto = False
-        assert lto_fname
 
-#           if lto_fname:
-#                print('File loaded.\n')
-#            if '.json' in lto_fname:
-#                jdata = get_json(lto_fname)
-#                current = json_to_list(jdata)
-#                self.name_size = json_final(current)
-#                get_lto = False
-#            return self.name_size
 
+# User first has to log onto CatDV
     def catdv_login(self):
         self.usr = self.username.get()
         self.pwd = self.password.get()
         try:
             c.set_auth(username=self.usr, password=self.pwd)
             c.get_session_key()
-            assert c.key
-            self.fstatus.set("Connected to CatDV")
-            c.get_catalog_name()
-            self.login_win.destroy()
+            if c.key:
+                self.fstatus.set("Connected to CatDV")
+                c.get_catalog_name()
+                self.login_win.destroy()
+            else:
+                raise AttributeError
+        except AttributeError:
+            tkMessageBox.showwarning("Login error", "Incorrect login details")
+
+# User should then locate their LTO file
+    def open_lto(self):
+        self.name_size = None
+        get_lto = True
+        try:
+            while get_lto:
+                lto_fname = tkFileDialog.askopenfilename(title='Open LTO file')
+                if lto_fname:
+                    self.fstatus.set("LTO file loaded")
+                    if '.json' in lto_fname:
+                        self.jdata = self.get_json(lto_fname)
+                        self.current = self.json_list(self.jdata)
+                        self.name_size = self.json_final(self.current)
+                        get_lto = False
+                    else:
+                        raise TypeError
+            return self.name_size
+        except TypeError:
+            tkMessageBox.showwarning("File error", "Unsupported file type")
+
+    def convert_to_tb(self, byte):
+        """
+        Converts byte data from the LTO file to terabytes
+        """
+        try:
+            f = float(byte)
+            tb = ((((f / 1024) / 1024) / 1024) / 1024)
+            return tb
+        except ValueError:
+            print("Value could not be converted to float. {}".format(str(byte)))
+
+    def convert_gigab(self, byte):
+        """
+        Converts byte data from the LTO file to gigabytes
+        """
+        try:
+            f = float(byte)
+            gb = (((f / 1024) / 1024) / 1024)
+            return gb
+        except ValueError:
+            print("Value could not be converted to float. {}".format(str(byte)))
+
+    def get_json(self, submitted_file):
+        """Returns JSON file as dictionary."""
+        lto_data = open(submitted_file, 'r')
+        jfile = json.load(lto_data)
+        return jfile
+
+    def json_list(self, json_data):
+        collect = []
+        for i in json_data['tapes']:
+            collect.append((i['name'], i['used_size']))
+        return collect
+
+    def json_final(self, collected):
+        final = []
+        for item in collected:
+            try:
+                tb = self.convert_to_tb(item[1])  # converts GB byte data to TB
+                a = re.search(r'(IV\d\d\d\d)', item[0])  # removes unicode
+                final.append((str(a.group()), round(tb, 2)))
+            except AttributeError:
+                pass
+        return final
+
+# users uses button to view results
+
+    def client_id(self):
+        clients = {}
+        try:
+            for name in c.catalog_names:
+                clients[name[0]] = name[1]
+            return clients
         except Exception, e:
-            print e
+            tkMessageBox.showerror("Error", "Catalog name error: %s" % e)
 
 root = tk.Tk()
 
