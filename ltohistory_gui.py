@@ -19,7 +19,6 @@ class Application(tk.Frame):
         self.build_variables()
         self.login_window()
 
-        # Main
         self.locate_frame = tk.Frame(self.parent, bg='gray93',
                                      padx=10,
                                      pady=10)
@@ -105,7 +104,6 @@ class Application(tk.Frame):
         except AttributeError:
             tkMessageBox.showwarning("Login error", "Incorrect login details")
 
-# User should then locate their LTO file
     def open_lto(self):
         self.name_size = None
         get_lto = True
@@ -199,12 +197,7 @@ class Application(tk.Frame):
                 api = self.get_barcodes(item[1])
                 two = set(self.get_client_items(name_size, api))
                 terabytes = self.get_storage_size(two)
-
                 yield (terabytes, item[0])
-
-                # print('\n{0}TB written for {1}\n'.format(terabytes, item[0]))
-                # self.results.insert(tk.END, '{} written for {}'.format(
-                #    terabytes, item[0]))
         except Exception, e:
             print e
 
