@@ -8,8 +8,6 @@ import tkMessageBox
 sys.path.insert(0, '../py-catdv')
 from pycatdv import Catdvlib
 
-# users may want to save results as text file.
-# user wants to quit application
 
 c = Catdvlib()
 
