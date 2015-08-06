@@ -30,9 +30,9 @@ class Application(tk.Frame):
         self.lto_file_label = tk.Label(self.locate_frame, width=50,
                                        textvariable=self.fstatus)
         self.get_data_btn = ttk.Button(self.locate_frame,
-                                       text="Get archived data",
+                                       text="Get archived info",
                                        width=30,
-                                       command=self.get_archived_info)
+                                       command=self.alt_get_archived)
         self.results = tk.Listbox(self.locate_frame, width=90)
 
         self.lto_btn.grid(row=0, column=0, pady=5)
@@ -201,22 +201,31 @@ class Application(tk.Frame):
         except Exception, e:
             print e
 
-    def get_archived_info(self):
+    def alt_get_archived(self):
+        self.fstatus.set("Calculating archived data. Please wait...")
         self.results.delete(0, tk.END)
         self.name_groupid = self.client_id()
         gen = self.total_sizes(self.name_groupid, self.name_size)
-        try:
-            for i in range(len(c.catalog_names)):
-                a = next(gen)
-                if len(str(a[0])) >= 6:
-                    self.results.insert(
-                        tk.END, '\t{}Tb written for {}'.format(
-                            round(a[0]/1024, 1), a[1]))
-                else:
-                    self.results.insert(tk.END, '\t{}Gb written for {}'.format(
-                        a[0], a[1]))
-        except StopIteration:
-            print("process complete")
+        self.i = len(c.catalog_names)
+
+        def callback():
+            a = next(gen)
+            if len(str(a[0])) >= 6:
+                self.results.insert(
+                    tk.END, '\t{}Tb written for {}'.format(
+                        round(a[0]/1024, 1), a[1]))
+            else:
+                self.results.insert(tk.END, '\t{}Gb written for {}'.format(
+                    a[0], a[1]))
+            self.i -= 1
+            if not self.i:
+                self.fstatus.set("Data calculation complete")
+            else:
+                root.after(1000, callback)
+        root.after(1000, callback)
+
+
+
 
 root = tk.Tk()
 root.title('LTO Archive History')
